@@ -1,0 +1,163 @@
+html {
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+
+/******************* LAYOUT *******************/
+
+.row::before,
+.row::after,
+.row-begin,
+.row-end {
+    display: table;
+    content: ' ';
+    clear: both;
+}
+
+.auto {
+    width: auto;
+}
+
+.column {
+    float: left;
+}
+
+.w-1 {
+    width: 100%;
+}
+
+.w-1_2 {
+    width: calc(100% / 2);
+}
+
+.w-1_3 {
+    width: calc(100% / 3);
+}
+
+.w-2_3 {
+    width: calc(100% / 3 * 2);
+}
+
+.w-1_4 {
+    width: calc(100% / 4);
+}
+
+.w-1_12 {
+    width: calc(100% / 12);
+}
+
+.w-11_12 {
+    width: calc(100% / 12 * 11);
+}
+
+.blank-1 {
+    height: 10px;
+}
+
+.blank-2 {
+    height: 7.5px;
+}
+
+.blank-3 {
+    height: 5px;
+}
+
+@media screen and (min-width: 800px) {
+    .blank-1 {
+        height: 20px;
+    }
+    .blank-2 {
+        height: 15px;
+    }
+    .blank-3 {
+        height: 7.5px;
+    }
+}
+
+.inherit-wh {
+    height: inherit;
+    width: inherit;
+}
+
+.inherit-h {
+    height: initial;
+}
+
+.inherit-mp {
+    margin: inherit;
+    padding: inherit;
+}
+
+
+/******************* Dynamic grid *********************/
+
+.dyn-grid {
+    width: calc(100% / 1);
+}
+
+@media only screen and (min-width: 600px) and (max-width: 991px) {
+    .dyn-grid {
+        width: calc(100% / 2);
+    }
+    .dyn-grid:nth-child(2n + 3) {
+        display: table;
+        content: ' ';
+        clear: both;
+    }
+}
+
+@media only screen and (min-width: 992px) {
+    .dyn-grid {
+        width: calc(100% / 3);
+    }
+    .dyn-grid:nth-child(3n + 4) {
+        display: table;
+        content: ' ';
+        clear: both;
+    }
+}
+
+
+/******************* HTML ELEMENTS *******************/
+
+h1 {
+    font-size: 2.0rem;
+    margin-block-start: 0.90em;
+    margin-block-end: 0.90em;
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-block-start: 0.70em;
+    margin-block-end: 0.70em;
+    font-weight: bold;
+}
+
+h4 {
+    font-size: 1.25rem;
+    margin-block-start: 0.35em;
+    margin-block-end: 0.35em;
+    font-weight: bold;
+}
+
+h6 {
+    font-size: 1.15rem;
+    margin-block-start: 0.25em;
+    margin-block-end: 0.25em;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+}
+
+button {
+    width: 100%;
+}

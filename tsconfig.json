@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "module": "ES2015",
+        "target": "ES2015",
+        "outDir": "./asset/generated/",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "watch": true,
+        "allowJs": true,
+    },
+    "files": [
+        "asset/src/app.ts"
+    ],
+    "include": [
+        "asset/src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+}

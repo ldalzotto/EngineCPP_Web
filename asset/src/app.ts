@@ -68,6 +68,7 @@ class Styles
     public static Row: string = "row";
     public static Column: string = "column";
     public static Width_1_3: string = "w-1_3";
+    public static TextCenter : string = "text-center";
 };
 
 class PageLayout
@@ -125,9 +126,46 @@ class PageLayout
 
     public static push_paragraph(p_parent: HTMLElement, p_text_content: string): HTMLElement
     {
+      return  PageLayout.push_paragraph_internal(p_parent, 1, p_text_content);
+    };
+
+    public static push_paragraph_internal(p_parent: HTMLElement, p_indent_rem: number, p_text_content: string): HTMLElement
+    {
+        let l_paragraph = document.createElement("paragraph");
+        PageLayout.push_indented_text(l_paragraph, p_indent_rem, p_text_content);
+        return p_parent.appendChild(l_paragraph);
+    };
+
+    public static push_text(p_parent: HTMLElement, p_display_style : string, p_text_content: string) : HTMLElement
+    {
         let l_paragraph_element = document.createElement("p");
-        l_paragraph_element.textContent = p_text_content;
+        l_paragraph_element.style.display = p_display_style;
+        l_paragraph_element.innerHTML += (p_text_content);
         return p_parent.appendChild(l_paragraph_element);
+    };
+
+    public static push_indented_text(p_parent: HTMLElement, p_indent_width_em: number, p_text_content: string)
+    {
+        let l_text_element = document.createElement("text");
+        {
+            let l_tab_element = document.createElement("span");
+            l_tab_element.style.width = `${p_indent_width_em}em`;
+            l_tab_element.style.display = "inline-block";
+            l_text_element.appendChild(l_tab_element);
+    
+            PageLayout.push_inline_text(l_text_element, p_text_content);
+        }
+        return p_parent.appendChild(l_text_element);
+    };
+
+    public static push_inline_text(p_parent: HTMLElement, p_text_content: string) : HTMLElement
+    {
+        return PageLayout.push_text(p_parent, "inline", p_text_content);
+    };
+
+    public static push_block_text(p_parent: HTMLElement, p_text_content: string) : HTMLElement
+    {
+        return PageLayout.push_text(p_parent, "block", p_text_content);
     };
 
     public static push_list(p_parent: HTMLElement, p_items : string[]) : HTMLElement
@@ -136,11 +174,31 @@ class PageLayout
         for (let j = 0; j < p_items.length; j++)
         {
             let l_li = document.createElement("li") as HTMLElement;
-            l_li.textContent = p_items[j];
+            l_li.innerHTML += p_items[j];
             l_list_element.appendChild(l_li);
         }
        return  p_parent.appendChild(l_list_element);
     };
+
+    public static push_image(p_parent: HTMLElement, p_url : string): HTMLElement
+    {
+        let l_image_container = document.createElement("image-block");
+        l_image_container.classList.add(Styles.TextCenter);
+        {
+            let l_image = document.createElement("img") as HTMLImageElement;
+            l_image.src = p_url;
+            l_image_container.appendChild(l_image);
+        }
+        return p_parent.appendChild(l_image_container);
+    }
+};
+
+class InnerHtml
+{
+    public static underline(p_content: string) : string
+    {
+        return `<u>${p_content}</u>`;
+    }  
 };
 
 
@@ -171,11 +229,7 @@ class ArticleElement
                         PageLayout.push_paragraph(l_container, p_article.paragraphs[p_article.section_indices[i].index]);
                         break;
                     case ArticleSectionType.IMAGE:
-                        {
-                            let l_image = document.createElement("img") as HTMLImageElement;
-                            l_image.src = p_article.images[p_article.section_indices[i].index];
-                            l_container.appendChild(l_image);
-                        }
+                        PageLayout.push_image(l_container, p_article.images[p_article.section_indices[i].index]);
                         break;
                     case ArticleSectionType.LIST:
                         PageLayout.push_list(l_container, p_article.lists[p_article.section_indices[i].index].items);
@@ -196,6 +250,7 @@ class Pages
 {
     public static Welcome: string = "/welcome";
     public static Engine: string = "/engine";
+    public static Engine_Render: string = "/engine/render";
 }
 
 class HeaderMenuElement
@@ -281,6 +336,32 @@ router.add(new Route(Pages.Welcome, (p_url: string) =>
     return true;
 }));
 
+
+router.add(new Route(Pages.Engine_Render, (p_url: string) =>{
+    app.innerHTML = "";
+    HeaderMenuElement.build(app);
+
+    let l_main_container = PageLayout.push_main_container(app);
+    {
+        PageLayout.push_huge_title(l_main_container, "The Render Engine");
+
+        PageLayout.push_medium_title(l_main_container, "Shader, Materials, ShaderParameters, RenderableObject");
+        PageLayout.push_paragraph(l_main_container, "Shader is the result of the compilation of fragment and vertex. Materials is a list of shader parameters value. " +
+            "Shader parameters are GPU buffers linked to material. RenderableObject is a combinaison of the 3D model, transformation matrix.");
+        PageLayout.push_medium_title(l_main_container, "GPU Memory management");
+        PageLayout.push_paragraph(l_main_container, "GPU Memory allocation is implemented as a heap. This means that the render engine has logic that reserve a slice of memory for any " +
+            "requested buffer. GPU Memory is of two types, host visible or gpu only. When we want to write to GPUOnly memory, we created an intermediate host visible buffer to push data through the pipeline.");
+        PageLayout.push_medium_title(l_main_container, "The draw loop");
+        PageLayout.push_paragraph(l_main_container, "First step : deferred command operations (staging push, texture layout transition). "+
+            "Second step : iterating over the tree (Shader->Material->RenderableObject) to render every renderable object with their associated material.");
+        PageLayout.push_medium_title(l_main_container, "Asset graph");
+        PageLayout.push_paragraph(l_main_container, "Showing the shader layout json, material json, shader json");
+        PageLayout.push_medium_title(l_main_container, "Exposed handle graph");
+    }
+
+    return true;
+}));
+
 router.add(new Route(Pages.Engine, (p_url: string) =>{
 
     app.innerHTML = "";
@@ -300,16 +381,63 @@ router.add(new Route(Pages.Engine, (p_url: string) =>{
                 "Components : Personalize scene nodes to make them interact with the world.",
                 "Middleware systems : Functions that communicate between the scene and modules.",
                 "Scene editor : Edit scene by adding scene nodes, component and visualizing changes at runtime."
-            ]);
+        ]);
+
+        PageLayout.push_medium_title(l_main_container, "Architecture");
+        PageLayout.push_paragraph(l_main_container, "Every brick can be categorized into six types : ");
+        PageLayout.push_image(l_main_container, "diagrams/EngineModulesLayered.png");
+        PageLayout.push_list(l_main_container, [
+            `${InnerHtml.underline("ThirdParty")} : Every third party libraries are treated as independant modules.`,
+            `${InnerHtml.underline("Utility")} : Utility modules can be consumed by everyone. They definine custom container structures and mathematics representations.`,
+            InnerHtml.underline("Middleware") + " : Middleware is the communication layer between the scene and the engine systems. It is at this level where 3D scene objects execute logic based on their components.",
+            InnerHtml.underline("Systems") + " : Independant engine systems. They usually have one entry point that is executed every frame. Datas that are processed every frames are provided by the middleware.",
+            InnerHtml.underline("Engine") + " : The engine creates all systems and execute the main loop.",
+            InnerHtml.underline("Tools") + " : Engine tools are built above the engine. For example, the scene editor creates an instance of the engine to edit the selected scene."
+        ]);
+
+        PageLayout.push_medium_title(l_main_container, "Communication between scene and systems");
+        PageLayout.push_paragraph(l_main_container, "The Scene is the heart of the engine. Every scene nodes can have multiple components. Components are plain data and doesn't execute logic, they can be seen as " +
+        "tags that tells what the node is doing. The scene has callbacks that are triggered whenever a component is attached or removed.");
+        PageLayout.push_paragraph(l_main_container, "The Middleware listens to these callbacks and based on the attached components and the attach or remove event, notify systems accordingly.");
+        PageLayout.push_paragraph(l_main_container, "Scene node creation/deletion and Component attach/detach can occur anywhere in the main loop. It is up to the systems to decide whether internal allocations are performed on the fly or "
+        + "deferred when the main loop calls them.");
+        PageLayout.push_image(l_main_container, "diagrams/SceneCommunication.png");
+
+        PageLayout.push_medium_title(l_main_container, "Main loop");
+        
+        PageLayout.push_paragraph_internal(l_main_container, 0, "NewFrame");
+        PageLayout.push_paragraph_internal(l_main_container, 1, "Update clock state.");
+        PageLayout.push_paragraph_internal(l_main_container, 1, "Consume input events.");
+        PageLayout.push_paragraph_internal(l_main_container, 0, "Update");
+        PageLayout.push_paragraph_internal(l_main_container, 1, "Set deltatime in clock state.");
+        PageLayout.push_paragraph_internal(l_main_container, 1, "Render");
+        PageLayout.push_paragraph_internal(l_main_container, 2, "Call RenderMiddleware");
+        PageLayout.push_paragraph_internal(l_main_container, 3, "Push Camera buffers if changed.");
+        PageLayout.push_paragraph_internal(l_main_container, 3, "Push RenderableObject buffers if changed.");
+        PageLayout.push_paragraph_internal(l_main_container, 2, "Render draw");
+
+        PageLayout.push_medium_title(l_main_container, "Asset management");
+        PageLayout.push_paragraph(l_main_container, "During development, raw assets (3D models, textures, .json) are located in the Asset folder of the C++ project. " + 
+        + "Human readable assets are then compiled to an internal format to be persisted in an embedded database. The AssetDatabase connection ans queries are handlesd by sqlite. "
+        + "The target format depends of the original type of the human readable asset.");
+        PageLayout.push_paragraph(l_main_container, "At runtime, assets are queried by their original relative path and deserialized from binary to C++ structs.");
+        PageLayout.push_paragraph(l_main_container, "//TODO -> Asset graph.");
+
+        PageLayout.push_medium_title(l_main_container, "Code structure");
         PageLayout.push_paragraph(l_main_container, "The philosophy of the engine source code is to : ");
         PageLayout.push_list(l_main_container, [
             "Use third party libraries as little as possible. The aim being to acquire knowledge as much as possible.",
-            "Using C++ as \"C with template engine.\". Other C++ features are rarely used."
+            "Using C++ as \"C with template engine\". Other C++ features are almost never used.",
+            "Avoiding nested vectors. Complex structures are flattended and nested vectors are replaced by indexes to the flattened structure.",
+            "For a given structure allocated on the heap, instead of working with pointers that points to the heap position, we allocate the structure in an array and work with an index (or Token) that will be used by the container "
+            + " to retrieve back the original data. This simplify serialization and keeps track of all allocations more easily.",
+            "Communication between Middleware and systems is done exclusively with Tokens. Raw pointers are forbidden."
         ]);
     }
     
     return true;
 }));
 
+
 // On startup
-router.navigate(Pages.Welcome);
+router.interpretCurrentUrl();

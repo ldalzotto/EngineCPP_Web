@@ -1,5 +1,7 @@
 import { router, Route } from "./framework.js"
 
+/* ####### ARTICLE */
+
 enum ArticleSectionType
 {
     UNDEFINED = 0,
@@ -62,13 +64,26 @@ class Article
     };
 };
 
+/* ####### STYLE_LAYOUT UTILS */
+
 class Styles
 {
     public static MainContainerClass: string = "main-container";
     public static Row: string = "row";
     public static Column: string = "column";
     public static Width_1_3: string = "w-1_3";
+    public static Width_2_3: string = "w-2_3";
+    public static Width_1_12: string = "w-1_12";
+    public static Width_11_12: string = "w-11_12";
+    public static Width_1: string = "w-1";
     public static TextCenter : string = "text-center";
+
+    public static set(p_element:HTMLElement, p_styles:string[]){
+        for(let i=0;i<p_styles.length;i++)
+        {
+            p_element.classList.add(p_styles[i]);
+        }
+    };
 };
 
 class PageLayout
@@ -80,26 +95,26 @@ class PageLayout
         return p_parent.appendChild(l_container);
     };
 
-    public static push_row(p_parent: HTMLElement, p_classes: string[]): HTMLElement
+    public static push_row(p_parent: HTMLElement): HTMLElement
     {
         let l_row_element = document.createElement("div");
         l_row_element.classList.add(Styles.Row);
-        for (let i = 0; i < p_classes.length; i++)
-        {
-            l_row_element.classList.add(p_classes[i]);
-        }
         return p_parent.appendChild(l_row_element);
     };
 
-    public static push_column(p_parent: HTMLElement, p_classes: string[]): HTMLElement
+    public static push_column(p_parent: HTMLElement): HTMLElement
     {
         let l_column_element = document.createElement("div");
         l_column_element.classList.add(Styles.Column);
-        for (let i = 0; i < p_classes.length; i++)
-        {
-            l_column_element.classList.add(p_classes[i]);
-        }
         return p_parent.appendChild(l_column_element);
+    };
+
+    public static push_column_width(p_parent: HTMLElement, p_width: string): HTMLElement
+    {
+
+        let l_column_element = PageLayout.push_column(p_parent);
+        l_column_element.classList.add(p_width);
+        return l_column_element;
     };
 
     public static push_small_title(p_parent: HTMLElement, p_text_content: string) : HTMLElement
@@ -201,6 +216,49 @@ class InnerHtml
     }  
 };
 
+/* ####### CUSTOM HTML ELEMENT */
+
+class TreeMenuItem
+{
+    public name:string;
+    constructor(p_name:string)
+    {
+        this.name = p_name;
+    }
+}
+
+class TreeMenuElementStyle
+{
+    public root_class: string[];
+    public item_class: string[];
+}
+
+class TreeMenuElement
+{
+    public parent: HTMLElement;
+    public root: HTMLElement;
+    public items: TreeMenuItem[];
+
+    public static build(p_parent:HTMLElement, p_items: TreeMenuItem[], p_style: TreeMenuElementStyle,
+        p_on_menu_item_clicked: (p_index:number)=>(void)) : TreeMenuElement
+    {
+        let l_return:TreeMenuElement = new TreeMenuElement();
+        l_return.parent = p_parent;
+        l_return.root = PageLayout.push_column_width(l_return.parent, Styles.Width_1);
+        Styles.set(l_return.root, p_style.root_class);
+        l_return.items = p_items;
+
+        for(let i=0;i<p_items.length;i++)
+        {
+            let l_item:HTMLElement =  PageLayout.push_row(l_return.root);
+            Styles.set(l_item, p_style.item_class);
+            PageLayout.push_block_text(l_item, p_items[i].name);
+            l_item.addEventListener('click', () => { p_on_menu_item_clicked(i); });
+        }
+
+        return l_return;
+    };
+}
 
 class ArticleElement
 {
@@ -260,9 +318,9 @@ class HeaderMenuElement
         let l_headerMenuElement = new HeaderMenuElement();
         l_headerMenuElement.root = document.createElement("div");
 
-        let l_row = PageLayout.push_row(l_headerMenuElement.root, []);
+        let l_row = PageLayout.push_row(l_headerMenuElement.root);
         {
-            let l_welcome_page = PageLayout.push_column(l_row, [Styles.Width_1_3]);
+            let l_welcome_page = PageLayout.push_column_width(l_row, Styles.Width_1_3);
             l_welcome_page.textContent = "WELCOME";
             l_welcome_page.addEventListener("click", () =>
             {
@@ -270,7 +328,7 @@ class HeaderMenuElement
             });
         }
         {
-            let l_engine_page = PageLayout.push_column(l_row, [Styles.Width_1_3]);
+            let l_engine_page = PageLayout.push_column_width(l_row, Styles.Width_1_3);
             l_engine_page.textContent = "ENGINE";
             l_engine_page.addEventListener("click", () =>
             {
@@ -285,16 +343,43 @@ class HeaderMenuElement
     public root: HTMLElement;
 }
 
+/* ####### APP */
 
+let cteate_page_full_layout: (p_root:HTMLElement)=>(HTMLElement) = (p_root:HTMLElement ) => {
+
+    let l_tree_pages = [
+        Pages.Engine,
+        Pages.Engine_Render,
+        Pages.Welcome
+    ];
+
+    let l_tree_items = [
+        new TreeMenuItem("Engine"),
+        new TreeMenuItem("Render"),
+        new TreeMenuItem("Welcome")
+    ];
+
+    let l_left_panel = PageLayout.push_column_width(app, Styles.Width_1_12);
+    l_left_panel.style.position = "fixed";
+    let l_shadow_left_panel = PageLayout.push_column_width(app, Styles.Width_1_12);
+    l_shadow_left_panel.style.height = "1px";
+    let l_container = PageLayout.push_column_width(app, Styles.Width_11_12);
+
+    let l_tree_style:TreeMenuElementStyle = new TreeMenuElementStyle();
+    l_tree_style.item_class= ["item"];
+    l_tree_style.root_class= ["main-toc"];
+    TreeMenuElement.build(l_left_panel, l_tree_items, l_tree_style, (p_index:number) => { router.navigate(l_tree_pages[p_index]); });
+
+    return l_container;
+}
 
 let app = document.getElementById("app");
-
 
 router.add(new Route(Pages.Welcome, (p_url: string) =>
 {
     app.innerHTML = "";
 
-    HeaderMenuElement.build(app);
+    let l_main_container:HTMLElement = cteate_page_full_layout(app);
 
     let l_articles: Article[] = [];
 
@@ -303,7 +388,6 @@ router.add(new Route(Pages.Welcome, (p_url: string) =>
         l_article.title = "Welcome";
         l_article.date = new Date(Date.now());
         l_article.push_paragraph("This website is a notebook for myself for writing a custom engine.");
-        l_article.push_image("http://image.noelshack.com/fichiers/2016/24/1466366209-risitas24.png");
         l_articles.push(l_article);
     }
 
@@ -330,7 +414,7 @@ router.add(new Route(Pages.Welcome, (p_url: string) =>
 
     for (let i = 0; i < l_articles.length; i++)
     {
-        ArticleElement.build(app, l_articles[i]);
+        ArticleElement.build(l_main_container, l_articles[i]);
     }
 
     return true;
@@ -339,9 +423,8 @@ router.add(new Route(Pages.Welcome, (p_url: string) =>
 
 router.add(new Route(Pages.Engine_Render, (p_url: string) =>{
     app.innerHTML = "";
-    HeaderMenuElement.build(app);
-
-    let l_main_container = PageLayout.push_main_container(app);
+    
+    let l_main_container:HTMLElement = cteate_page_full_layout(app);
     {
         PageLayout.push_huge_title(l_main_container, "The Render Engine");
 
@@ -365,9 +448,9 @@ router.add(new Route(Pages.Engine_Render, (p_url: string) =>{
 router.add(new Route(Pages.Engine, (p_url: string) =>{
 
     app.innerHTML = "";
-    HeaderMenuElement.build(app);
-
-    let l_main_container = PageLayout.push_main_container(app);
+   
+    let l_container:HTMLElement = cteate_page_full_layout(app);
+    let l_main_container = PageLayout.push_main_container(l_container);
     {
         PageLayout.push_huge_title(l_main_container, "The Engine");
         PageLayout.push_paragraph(l_main_container, "This project is a home made 3D game engine developped in c++. I created it to acquire knowledge on building a complex piece of software in C++.");

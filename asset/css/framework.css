@@ -161,3 +161,8 @@ input {
 button {
     width: 100%;
 }
+
+
+.text-center {
+    text-align: center;
+}
